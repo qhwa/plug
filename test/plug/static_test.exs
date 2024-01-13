@@ -821,4 +821,19 @@ defmodule Plug.StaticTest do
 
     assert conn.status == 200
   end
+
+  test "read file into memory and send file" do
+    opts = [
+      at: "/public",
+      from: Path.expand("..", __DIR__),
+      read_file: true
+    ]
+
+    conn =
+      conn(:get, "/public/fixtures/static.txt")
+      |> call(opts)
+
+    assert conn.status == 200
+    assert conn.resp_body == "HELLO"
+  end
 end

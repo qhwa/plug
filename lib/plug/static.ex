@@ -104,6 +104,9 @@ defmodule Plug.Static do
       and content type as value. For example:
       `content_types: %{"apple-app-site-association" => "application/json"}`.
 
+    * `:read_file` - a boolean value that determines whether the file should be read
+      into memory before sending. Defaults to `false`.
+
   ## Examples
 
   This plug can be mounted in a `Plug.Builder` pipeline as follows:
@@ -169,7 +172,8 @@ defmodule Plug.Static do
       headers: Keyword.get(opts, :headers, %{}),
       content_types: Keyword.get(opts, :content_types, %{}),
       from: from,
-      at: opts |> Keyword.fetch!(:at) |> Plug.Router.Utils.split()
+      at: opts |> Keyword.fetch!(:at) |> Plug.Router.Utils.split(),
+      read_file: Keyword.get(opts, :read_file, false)
     }
   end
 
@@ -305,7 +309,7 @@ defmodule Plug.Static do
   defp send_entire_file(conn, path, options) do
     conn
     |> maybe_add_vary(options)
-    |> send_file(200, path)
+    |> maybe_send_file(path, options)
     |> halt()
   end
 
@@ -322,6 +326,12 @@ defmodule Plug.Static do
       conn
     end
   end
+
+  defp maybe_send_file(conn, path, %{read_file: true}),
+    do: conn |> send_resp(200, File.read!(path))
+
+  defp maybe_send_file(conn, path, _options),
+    do: conn |> send_file(200, path)
 
   defp put_cache_header(
          %Conn{query_string: "vsn=" <> _} = conn,
